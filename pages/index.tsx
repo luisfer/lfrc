@@ -1,7 +1,7 @@
 import Head from 'next/head'
-import { useState } from 'react'
-import { motion } from 'framer-motion'
-import { ExternalLink, Mail, MapPin, Github, Linkedin, Music, BookOpen, Code, Plane, Timer, Building, Calendar, ArrowRight } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { motion, useScroll, useTransform, useSpring, AnimatePresence } from 'framer-motion'
+import { ExternalLink, Mail, MapPin, Github, Linkedin, Music, BookOpen, Code, Plane, Timer, Building, Calendar, ArrowRight, ChevronDown, ChevronLeft, ChevronRight, Download } from 'lucide-react'
 
 // Custom Icons
 const SpotifyIcon = () => (
@@ -12,7 +12,7 @@ const SpotifyIcon = () => (
 
 const AppleMusicIcon = () => (
   <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-    <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.568 17.568c-.24.24-.571.24-.811 0-.961-.96-2.4-1.44-3.84-1.44-1.44 0-2.88.48-3.84 1.44-.24.24-.571.24-.811 0s-.24-.571 0-.811c1.201-1.2 2.88-1.92 4.651-1.92s3.45.72 4.651 1.92c.24.24.24.571 0 .811zM18 14.4c-.3.3-.72.3-1.02 0-1.38-1.38-3.42-2.16-5.46-2.16s-4.08.78-5.46 2.16c-.3.3-.72.3-1.02 0s-.3-.72 0-1.02c1.68-1.68 4.14-2.64 6.48-2.64s4.8.96 6.48 2.64c.3.3.3.72 0 1.02zM19.44 11.1c-.36.36-.9.36-1.26 0-1.8-1.8-4.44-2.82-6.96-2.82s-5.16 1.02-6.96 2.82c-.36.36-.9.36-1.26 0s-.36-.9 0-1.26c2.16-2.16 5.22-3.42 8.22-3.42s6.06 1.26 8.22 3.42c.36.36.36.9 0 1.26z"/>
+    <path d="M21.5 4.5c-.3-.3-.7-.5-1.1-.5-.8 0-1.5.2-2.4.5L9 6.8c-.4.1-.7.5-.7.9v9.9c-.6-.4-1.3-.6-2-.6-1.7 0-3 1.3-3 3s1.3 3 3 3 3-1.3 3-3V11.9l8-2.3v6.7c-.6-.4-1.3-.6-2-.6-1.7 0-3 1.3-3 3s1.3 3 3 3 3-1.3 3-3V5.5c0-.4-.2-.8-.6-1z"/>
   </svg>
 )
 
@@ -22,21 +22,297 @@ const BandcampIcon = () => (
   </svg>
 )
 
+// Animated Signature Component with left-to-right fade-in
+const AnimatedSignature: React.FC<{ className?: string; size?: 'small' | 'medium' | 'large' }> = ({ 
+  className = "", 
+  size = 'medium' 
+}) => {
+  const sizeMap = {
+    small: { height: 'h-32' },
+    medium: { height: 'h-48' },
+    large: { height: 'h-48' }
+  };
+  
+  const { height } = sizeMap[size];
+
+  return (
+    <motion.div
+      className={`${className.includes('text-left') ? 'flex justify-start' : 'flex justify-center'} ${className}`}
+      initial={{ opacity: 0, scale: 0.8 }}
+      whileInView={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.6 }}
+      viewport={{ once: true }}
+    >
+      <div className="overflow-hidden">
+        <motion.img 
+          src="/favicon.png" 
+          alt="Signature"
+          className={`${height} opacity-60 hover:opacity-80 transition-opacity duration-300`}
+          initial={{ 
+            x: 0, 
+            opacity: 0 
+          }}
+          whileInView={{ 
+            x: 0, 
+            opacity: 0.6 
+          }}
+          whileHover={{ 
+            scale: 1, 
+            rotate: 1,
+            opacity: 0.8
+          }}
+          transition={{ 
+            duration: 1.5, 
+            delay: 0.3,
+            ease: [0.25, 0.1, 0.25, 1.0]
+          }}
+          viewport={{ once: true }}
+        />
+      </div>
+    </motion.div>
+  );
+};
+
+// Authentic Timer Carousel Component
+const AuthenticTimerCarousel: React.FC = () => {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [direction, setDirection] = useState(0);
+  
+  const images = [
+    { src: '/images/at-4.jpg', alt: 'Authentic Timer - Main view' },
+    { src: '/images/at-0.png', alt: 'Authentic Timer - Main interface' },
+    { src: '/images/at-1.png', alt: 'Authentic Timer - Timer in action' },
+    { src: '/images/at-2.png', alt: 'Authentic Timer - Task management' },
+    { src: '/images/at-3.png', alt: 'Authentic Timer - Settings view' },
+  ];
+
+  const slideVariants = {
+    enter: (direction: number) => ({
+      x: direction > 0 ? 1000 : -1000,
+      opacity: 0,
+      scale: 0.9
+    }),
+    center: {
+      zIndex: 1,
+      x: 0,
+      opacity: 1,
+      scale: 1
+    },
+    exit: (direction: number) => ({
+      zIndex: 0,
+      x: direction < 0 ? 1000 : -1000,
+      opacity: 0,
+      scale: 0.9
+    })
+  };
+
+  const swipeConfidenceThreshold = 10000;
+  const swipePower = (offset: number, velocity: number) => {
+    return Math.abs(offset) * velocity;
+  };
+
+  const paginate = (newDirection: number) => {
+    setDirection(newDirection);
+    setCurrentIndex((prevIndex) => {
+      if (newDirection === 1) {
+        return (prevIndex + 1) % images.length;
+      }
+      return prevIndex === 0 ? images.length - 1 : prevIndex - 1;
+    });
+  };
+
+  // Auto-advance every 5 seconds
+  useEffect(() => {
+    const timer = setInterval(() => {
+      paginate(1);
+    }, 5000);
+
+    return () => clearInterval(timer);
+  }, []);
+
+  return (
+    <div className="relative">
+      <motion.div 
+        className="bg-white/90 backdrop-blur-sm rounded-3xl overflow-hidden shadow-2xl ring-1 ring-sage-200/50 relative"
+        whileHover={{ y: -8, scale: 1.02 }}
+        transition={{ type: "spring", stiffness: 300, damping: 20 }}
+      >
+        {/* Main Image Container */}
+        <div className="aspect-[3/4] relative overflow-hidden bg-gradient-to-br from-sage-50 to-sage-100">
+          <AnimatePresence initial={false} custom={direction}>
+            <motion.img
+              key={currentIndex}
+              src={images[currentIndex].src}
+              alt={images[currentIndex].alt}
+              className="absolute inset-0 w-full h-full object-contain p-4"
+              custom={direction}
+              variants={slideVariants}
+              initial="enter"
+              animate="center"
+              exit="exit"
+              transition={{
+                x: { type: "spring", stiffness: 300, damping: 30 },
+                opacity: { duration: 0.2 }
+              }}
+              drag="x"
+              dragConstraints={{ left: 0, right: 0 }}
+              dragElastic={1}
+              onDragEnd={(e, { offset, velocity }) => {
+                const swipe = swipePower(offset.x, velocity.x);
+
+                if (swipe < -swipeConfidenceThreshold) {
+                  paginate(1);
+                } else if (swipe > swipeConfidenceThreshold) {
+                  paginate(-1);
+                }
+              }}
+            />
+          </AnimatePresence>
+          
+          {/* Navigation Arrows */}
+          <motion.button
+            className="absolute left-3 top-1/2 -translate-y-1/2 w-8 h-8 bg-white/90 backdrop-blur-sm rounded-full shadow-lg flex items-center justify-center text-sage-600 hover:bg-white hover:text-sage-700 transition-all duration-200"
+            onClick={() => paginate(-1)}
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </motion.button>
+          
+          <motion.button
+            className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 bg-white/90 backdrop-blur-sm rounded-full shadow-lg flex items-center justify-center text-sage-600 hover:bg-white hover:text-sage-700 transition-all duration-200"
+            onClick={() => paginate(1)}
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+          >
+            <ChevronRight className="w-4 h-4" />
+          </motion.button>
+        </div>
+
+        {/* Thumbnail Navigation */}
+        <div className="p-3 bg-white/50 backdrop-blur-sm">
+          <div className="flex justify-center space-x-2">
+            {images.map((_, index) => (
+              <motion.button
+                key={index}
+                className={`w-12 h-9 rounded-md overflow-hidden border-2 transition-all duration-300 ${
+                  index === currentIndex 
+                    ? 'border-sage-500 shadow-md' 
+                    : 'border-sage-200/50 hover:border-sage-300'
+                }`}
+                onClick={() => {
+                  const newDirection = index > currentIndex ? 1 : -1;
+                  setDirection(newDirection);
+                  setCurrentIndex(index);
+                }}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <img
+                  src={images[index].src}
+                  alt={`Thumbnail ${index + 1}`}
+                  className="w-full h-full object-cover"
+                />
+              </motion.button>
+            ))}
+          </div>
+        </div>
+      </motion.div>
+    </div>
+  );
+};
+
+// Floating particles background component
+const FloatingParticles = () => {
+  return (
+    <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+      {[...Array(20)].map((_, i) => (
+        <motion.div
+          key={i}
+          className="absolute w-1 h-1 bg-sage-200/30 rounded-full"
+          animate={{
+            x: [0, 100, 0],
+            y: [0, -100, 0],
+            opacity: [0, 1, 0],
+          }}
+          transition={{
+            duration: Math.random() * 10 + 20,
+            repeat: Infinity,
+            delay: Math.random() * 10,
+          }}
+          style={{
+            left: `${Math.random() * 100}%`,
+            top: `${Math.random() * 100}%`,
+          }}
+        />
+      ))}
+    </div>
+  )
+}
+
+// Enhanced scroll progress indicator
+const ScrollProgress = () => {
+  const { scrollYProgress } = useScroll()
+  const scaleX = useSpring(scrollYProgress, {
+    stiffness: 100,
+    damping: 30,
+    restDelta: 0.001
+  })
+
+  return (
+    <motion.div
+      className="fixed top-0 left-0 right-0 h-1 bg-gradient-to-r from-sage-400 via-sage-600 to-sage-800 transform-gpu z-50"
+      style={{ scaleX, transformOrigin: "0%" }}
+    />
+  )
+}
+
 export default function Home() {
   const [activeSection, setActiveSection] = useState('software')
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 })
+  const { scrollYProgress } = useScroll()
+  
+  // Parallax transforms
+  const yTransform = useTransform(scrollYProgress, [0, 1], [0, -50])
+  const opacityTransform = useTransform(scrollYProgress, [0, 0.3], [1, 0.8])
 
-  const fadeIn = {
-    initial: { opacity: 0, y: 20 },
-    animate: { opacity: 1, y: 0 },
-    transition: { duration: 0.6 }
+  // Mouse tracking for subtle interactions
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      setMousePosition({ x: e.clientX, y: e.clientY })
+    }
+    window.addEventListener('mousemove', handleMouseMove)
+    return () => window.removeEventListener('mousemove', handleMouseMove)
+  }, [])
+
+  // Enhanced animation variants
+  const fadeInUp = {
+    initial: { opacity: 0, y: 60 },
+    animate: { opacity: 1, y: 0 }
+  }
+
+  const fadeInScale = {
+    initial: { opacity: 0, scale: 0.8 },
+    animate: { opacity: 1, scale: 1 }
   }
 
   const staggerContainer = {
     animate: {
       transition: {
-        staggerChildren: 0.1
+        staggerChildren: 0.15,
+        delayChildren: 0.1
       }
     }
+  }
+
+  const slideInLeft = {
+    initial: { opacity: 0, x: -80 },
+    animate: { opacity: 1, x: 0 }
+  }
+
+  const slideInRight = {
+    initial: { opacity: 0, x: 80 },
+    animate: { opacity: 1, x: 0 }
   }
 
   const companies = [
@@ -143,116 +419,273 @@ export default function Home() {
         <link rel="icon" href="/favicon.png" />
       </Head>
 
-      <div className="min-h-screen bg-white">
+      <div className="min-h-screen bg-white relative overflow-x-hidden">
+        <FloatingParticles />
+        <ScrollProgress />
+        
         {/* Navigation */}
-        <nav className="fixed top-0 left-0 right-0 bg-white/80 backdrop-blur-md z-50 border-b border-neutral-100">
-          <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 sm:py-4">
+        <motion.nav 
+          initial={{ y: -100 }}
+          animate={{ y: 0 }}
+          transition={{ duration: 0.8, ease: [0.6, -0.05, 0.01, 0.99] }}
+          className="fixed top-0 left-0 right-0 bg-white/70 backdrop-blur-xl z-50 border-b border-neutral-100/50"
+        >
+          <div className="max-w-full mx-auto px-10 sm:px-6 py-3 sm:py-3">
             <div className="flex items-center justify-between">
-              <div className="text-xl sm:text-2xl font-bold text-sage-700 tracking-wider">LFRC.me</div>
+              <motion.div 
+                className="text-xl sm:text-2xl font-bold text-sage-700 tracking-wider cursor-pointer"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                lfrc.me
+              </motion.div>
               
               {/* Desktop Navigation */}
-              <div className="hidden md:flex items-center space-x-6">
-                <a href="#projects" className="text-neutral-600 hover:text-neutral-900 transition-colors">Featured Work</a>
-                <a href="#experience" className="text-neutral-600 hover:text-neutral-900 transition-colors">Experience</a>
-                <a href="#about" className="text-neutral-600 hover:text-neutral-900 transition-colors">About</a>
-                <a href="#contact" className="text-neutral-600 hover:text-neutral-900 transition-colors">Contact</a>
+              <div className="hidden md:flex items-center space-x-8">
+                {['Featured Work', 'Experience', 'About', 'Contact'].map((item, index) => (
+                  <motion.a
+                    key={item}
+                    href={`#${item.toLowerCase().replace(' ', '')}`}
+                    className="text-neutral-600 hover:text-neutral-900 transition-all duration-300 relative group"
+                    whileHover={{ y: -2 }}
+                    initial={{ opacity: 0, y: -20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.1 * index + 0.5 }}
+                  >
+                    {item}
+                    <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-sage-600 transition-all duration-300 group-hover:w-full"></span>
+                  </motion.a>
+                ))}
               </div>
               
               {/* Mobile Navigation */}
               <div className="md:hidden flex items-center space-x-4">
-                <a href="#projects" className="text-neutral-600 hover:text-neutral-900 transition-colors text-sm">Work</a>
-                <a href="#contact" className="text-sage-600 hover:text-sage-700 transition-colors text-sm font-medium">Contact</a>
+                <motion.a 
+                  href="#projects" 
+                  className="text-neutral-600 hover:text-neutral-900 transition-colors text-sm"
+                  whileTap={{ scale: 0.95 }}
+                >
+                  Work
+                </motion.a>
+                <motion.a 
+                  href="#contact" 
+                  className="text-sage-600 hover:text-sage-700 transition-colors text-sm font-medium px-3 py-1 rounded-full border border-sage-200 hover:bg-sage-50"
+                  whileTap={{ scale: 0.95 }}
+                >
+                  Contact
+                </motion.a>
               </div>
             </div>
           </div>
-        </nav>
+        </motion.nav>
 
         {/* Hero Section */}
-        <section className="relative min-h-screen flex items-center bg-gradient-to-b from-white via-sage-50/10 to-sage-50/20">
-          <div className="max-w-7xl mx-auto w-full px-6 py-20">
+        <section className="relative min-h-screen flex items-center overflow-hidden">
+          {/* Enhanced gradient background with subtle animation */}
+          <motion.div 
+            className="absolute inset-0 bg-gradient-to-br from-white via-sage-50/20 to-sage-100/30"
+            style={{ y: yTransform, opacity: opacityTransform }}
+          />
+          
+          {/* Subtle animated shapes */}
+          <div className="absolute inset-0 overflow-hidden">
+            <motion.div
+              className="absolute top-1/4 left-1/4 w-96 h-96 bg-sage-200/10 rounded-full blur-3xl"
+              animate={{
+                scale: [1, 1.2, 1],
+                opacity: [0.3, 0.5, 0.3],
+              }}
+              transition={{
+                duration: 8,
+                repeat: Infinity,
+                ease: "easeInOut"
+              }}
+            />
+            <motion.div
+              className="absolute bottom-1/4 right-1/4 w-64 h-64 bg-sage-300/10 rounded-full blur-3xl"
+              animate={{
+                scale: [1.2, 1, 1.2],
+                opacity: [0.5, 0.3, 0.5],
+              }}
+              transition={{
+                duration: 10,
+                repeat: Infinity,
+                ease: "easeInOut"
+              }}
+            />
+          </div>
+
+          <div className="max-w-7xl mx-auto w-full px-6 py-20 relative z-10">
             
             {/* Mobile: Clean & Professional */}
             <div className="lg:hidden text-center space-y-10">
               {/* Portrait */}
               <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.6, delay: 0.2 }}
+                variants={fadeInScale}
+                initial="initial"
+                animate="animate"
                 className="flex justify-center"
               >
-                <div className="w-36 h-36 rounded-full overflow-hidden shadow-lg bg-neutral-100">
+                <motion.div 
+                  className="w-36 h-36 rounded-full overflow-hidden shadow-2xl bg-neutral-100 ring-4 ring-white/50 backdrop-blur-sm"
+                  whileHover={{ scale: 1.05, rotate: 5 }}
+                  transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                >
                   <img 
                     src="/images/me.jpg" 
                     alt="Luis Fernando Romero Calero"
                     className="w-full h-full object-cover object-center"
                   />
-                </div>
+                </motion.div>
               </motion.div>
 
               {/* Name & Title */}
               <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.4 }}
+                variants={staggerContainer}
+                initial="initial"
+                animate="animate"
                 className="space-y-4"
               >
-                <h1 className="text-4xl sm:text-5xl font-light text-neutral-900 leading-tight">
-                  Luis Fernando
-                  <br />
-                  <span className="font-serif italic text-sage-800">Romero Calero</span>
-                </h1>
-                <p className="text-xl text-sage-600 font-light">(Luis is fine)</p>
-                
-                {/* Signature - Mobile */}
-                <div className="flex justify-center py-3">
-                  <img 
-                    src="/favicon.png" 
-                    alt="Luis Fernando Signature"
-                    className="h-20 opacity-50 hover:opacity-80 transition-opacity duration-300"
-                  />
-                </div>
-                
-                <p className="text-2xl text-neutral-800 font-medium">
-                  Senior Software Engineer & Product Builder
-                </p>
+                <motion.h1 
+                  variants={fadeInUp}
+                  className="text-4xl sm:text-5xl font-light text-neutral-900 leading-tight relative cursor-pointer"
+                  whileHover={{ scale: 1.01 }}
+                  transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                >
+                  <motion.div
+                    className="relative overflow-hidden"
+                    whileHover="hover"
+                    initial="rest"
+                    variants={{
+                      rest: { filter: "blur(0px)" },
+                      hover: { 
+                        filter: ["blur(0px)", "blur(8px)", "blur(0px)"],
+                        transition: { duration: 0.8, times: [0, 0.4, 1] }
+                      }
+                    }}
+                  >
+                    <motion.div
+                      variants={{
+                        rest: { opacity: 1 },
+                        hover: { 
+                          opacity: 0,
+                          transition: { duration: 0.2 }
+                        }
+                      }}
+                    >
+                      Luis Fernando
+                      <br />
+                      <span className="font-serif italic text-sage-800 bg-gradient-to-r from-sage-700 to-sage-900 bg-clip-text text-transparent">
+                        Romero Calero
+                      </span>
+                    </motion.div>
+                    
+                    <motion.div
+                      className="absolute inset-0 flex items-center justify-center text-sage-600 text-center"
+                      variants={{
+                        rest: { opacity: 0 },
+                        hover: { 
+                          opacity: 1,
+                          transition: { delay: 0.4, duration: 0.2 }
+                        }
+                      }}
+                    > You can call me<br/>
+                      <span className="font-serif italic text-sage-800 bg-gradient-to-r from-sage-700 to-sage-900 bg-clip-text text-transparent">
+                       Luis
+                      </span>
+                    </motion.div>
+                  </motion.div>
+                </motion.h1>
+                <motion.div 
+                  variants={fadeInUp}
+                  className="text-xl text-neutral-700 font-medium leading-relaxed"
+                >
+                  <div>Senior Software Engineer</div>
+                  <div>Creative Product Builder</div>
+                  <div>Aspiring Founder</div>
+                  <div>Amateur Musician and Writer</div>
+                </motion.div>
               </motion.div>
 
               {/* Location */}
               <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.6 }}
+                variants={fadeInUp}
+                initial="initial"
+                animate="animate"
                 className="flex justify-center"
               >
-                <div className="flex items-center text-neutral-600">
+                <motion.div 
+                  className="flex items-center text-neutral-600 bg-white/60 backdrop-blur-sm px-4 py-2 rounded-full shadow-lg"
+                  whileHover={{ scale: 1.05 }}
+                >
                   <MapPin className="w-5 h-5 mr-2 text-sage-600" />
                   <span className="text-base font-medium">Bangkok, Thailand</span>
-                </div>
+                </motion.div>
               </motion.div>
 
               {/* Actions */}
               <motion.div 
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.8 }}
-                className="flex flex-col gap-3 px-6"
+                variants={staggerContainer}
+                initial="initial"
+                animate="animate"
+                className="space-y-4 px-6"
               >
-                <a 
-                  href="#contact" 
-                  className="inline-flex items-center justify-center px-8 py-3 bg-sage-600 text-white rounded-lg hover:bg-sage-700 transition-all duration-300 font-medium shadow-lg"
+                {/* Main action buttons */}
+                <div className="flex flex-col gap-3">
+                  <motion.a 
+                    variants={fadeInUp}
+                    href="#contact" 
+                    className="inline-flex items-center justify-center px-8 py-3 bg-gradient-to-r from-sage-600 to-sage-700 text-white rounded-xl hover:from-sage-700 hover:to-sage-800 transition-all duration-300 font-medium shadow-lg hover:shadow-xl transform-gpu"
+                    whileHover={{ scale: 1.02, y: -2 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    <Mail className="w-4 h-4 mr-2" />
+                    Get in Touch
+                  </motion.a>
+                  <motion.a 
+                    variants={fadeInUp}
+                    href="/resume_Luis_Romero.pdf" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-center px-8 py-3 border-2 border-sage-600 text-sage-600 rounded-xl hover:bg-sage-600 hover:text-white transition-all duration-300 font-medium shadow-lg hover:shadow-xl transform-gpu"
+                    whileHover={{ scale: 1.02, y: -2 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    <Download className="w-4 h-4 mr-2" />
+                    Resume
+                  </motion.a>
+                </div>
+                
+                {/* Authentic Timer link */}
+                <motion.div
+                  variants={fadeInUp}
+                  className="flex justify-center pt-2"
                 >
-                  <Mail className="w-4 h-4 mr-2" />
-                  Get in Touch
-                </a>
-                <a 
-                  href="/resume_Luis_Romero.pdf" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center justify-center px-8 py-3 border border-sage-600 text-sage-600 rounded-lg hover:bg-sage-50 transition-all duration-300 font-medium"
-                >
-                  <ExternalLink className="w-4 h-4 mr-2" />
-                  Resume
-                </a>
+                  <motion.a 
+                    href="https://authentictimer.com" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="inline-flex flex-col items-center text-neutral-600 hover:text-neutral-900 transition-all duration-300 relative group"
+                    whileHover={{ y: -2 }}
+                  >
+                    <span className="text-base">Check out my latest project -</span>
+                    <div className="flex items-center">
+                      <motion.div
+                        className="mr-2"
+                        animate={{ rotate: 360 }}
+                        transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+                      >
+                        <svg viewBox="0 0 100 100" className="w-4 h-4">
+                          <circle cx="50" cy="50" r="35" fill="none" stroke="currentColor" strokeWidth="6"></circle>
+                          <circle cx="50" cy="50" r="8" fill="#fbbf24"></circle>
+                          <path d="M 50 15 A 35 35 0 0 1 50 85" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round"></path>
+                        </svg>
+                      </motion.div>
+                      <span className="text-base font-medium">Authentic Timer</span>
+                    </div>
+                    <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-neutral-700 transition-all duration-300 group-hover:w-full"></span>
+                  </motion.a>
+                </motion.div>
               </motion.div>
             </div>
 
@@ -261,194 +694,433 @@ export default function Home() {
               
               {/* Left: Content */}
               <motion.div 
-                initial={{ opacity: 0, x: -30 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.8, delay: 0.2 }}
+                variants={slideInLeft}
+                initial="initial"
+                animate="animate"
                 className="space-y-10"
               >
                 {/* Main Heading */}
                 <div className="space-y-6">
-                  <h1 className="text-6xl xl:text-7xl font-light text-neutral-900 leading-none">
-                    Luis Fernando
-                    <br />
-                    <span className="font-serif italic text-sage-800">Romero Calero</span>
-                  </h1>
+                  <motion.h1 
+                    className="text-6xl xl:text-7xl font-light text-neutral-900 leading-none relative cursor-pointer"
+                    initial={{ opacity: 0, y: 50 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 1, delay: 0.2 }}
+                    whileHover={{ scale: 1.01 }}
+                  >
+                    <motion.div
+                      className="relative overflow-hidden"
+                      whileHover="hover"
+                      initial="rest"
+                      variants={{
+                        rest: { filter: "blur(0px)" },
+                        hover: { 
+                          filter: ["blur(0px)", "blur(8px)", "blur(0px)"],
+                          transition: { duration: 0.8, times: [0, 0.4, 1] }
+                        }
+                      }}
+                    >
+                      <motion.div
+                        variants={{
+                          rest: { opacity: 1 },
+                          hover: { 
+                            opacity: 1,
+                            transition: { duration: 0.2 }
+                          }
+                        }}
+                      >
+                        Luis Fernando
+                        <br />
+                        <motion.span 
+                          className="font-serif italic bg-gradient-to-r from-sage-700 via-sage-800 to-sage-900 bg-clip-text text-transparent"
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          transition={{ duration: 1, delay: 0.8 }}
+                        >
+                          Romero Calero
+                        </motion.span>
+                      </motion.div>
+                      
+                      <motion.div
+                      className="text-3xl"
+                        variants={{
+                          rest: { opacity: 0 },
+                          hover: { 
+                            opacity: 1,
+                            transition: { delay: 0.4, duration: 0.2 }
+                          }
+                        }}
+                      >
+                        (You can call me 
+                        <motion.span 
+                          className="font-serif italic bg-gradient-to-r from-sage-700 via-sage-800 to-sage-900 bg-clip-text text-transparent"
+                        >
+                           &nbsp;Luis
+                        </motion.span>)
+                      </motion.div>
+                    </motion.div>
+                  </motion.h1>
                   
                   <div className="space-y-4">
-                    <p className="text-3xl text-sage-600 font-light">(Luis is fine)</p>
+
                     
                     {/* Signature - Desktop */}
-                    <div className="py-3">
-                      <img 
-                        src="/favicon.png" 
-                        alt="Luis Fernando Signature"
-                        className="h-24 opacity-50 hover:opacity-80 transition-opacity duration-300"
-                      />
-                    </div>
+                    <motion.div 
+                      className="py-0 flex justify-start"
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ duration: 0.8, delay: 1.2 }}
+                    >
+                      <AnimatedSignature size="large" className="text-left" />
+                    </motion.div>
                     
-                    <p className="text-2xl text-neutral-700 leading-relaxed">
-                      Senior Software Engineer & Product Builder
-                    </p>
                   </div>
                 </div>
 
                 {/* Professional Summary */}
-                <div className="bg-sage-50 rounded-2xl p-6 border-l-4 border-sage-600">
-                  <p className="text-lg text-neutral-700 leading-relaxed">
-                    Born in Sevilla, Spain, and now calling Thailand my new home. I love building products that blend technical and creative challenges – from enterprise solutions to personal projects like Authentic Timer.
-                  </p>
-                </div>
+                <motion.div 
+                  className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 border border-sage-200/50 shadow-lg hover:shadow-xl transition-all duration-300"
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.8, delay: 1.6 }}
+                  whileHover={{ y: -5 }}
+                >
+                  <div className="border-l-4 border-sage-600 pl-4">
+                    <div className="text-lg text-neutral-700 leading-relaxed font-medium">
+                      <div>Senior Software Engineer</div>
+                      <div>Creative Product Builder</div>
+                      <div>Aspiring Founder</div>
+                      <div>Amateur Musician and Writer</div>
+                    </div>
+                  </div>
+                </motion.div>
 
-                {/* Contact & Location */}
-                <div className="flex flex-wrap gap-8 text-neutral-600">
-                  <div className="flex items-center">
-                    <MapPin className="w-5 h-5 mr-3 text-sage-600" />
-                    <span className="font-medium">Bangkok, Thailand</span>
-                  </div>
-                  <div className="flex items-center">
-                    <Mail className="w-5 h-5 mr-3 text-sage-600" />
-                    <span className="font-medium">luisfer.romero.calero@gmail.com</span>
-                  </div>
-                </div>
-                
                 {/* Action Buttons */}
-                <div className="flex gap-4 pt-4">
-                  <a 
-                    href="#contact" 
-                    className="inline-flex items-center justify-center px-8 py-4 bg-sage-600 text-white rounded-xl hover:bg-sage-700 transition-all duration-300 text-lg font-medium shadow-xl hover:shadow-2xl hover:-translate-y-1"
+                <motion.div 
+                  className="space-y-4 pt-4"
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.8, delay: 2 }}
+                >
+                  {/* Main action buttons */}
+                  <div className="flex gap-4">
+                    <motion.a 
+                      href="#contact" 
+                      className="inline-flex items-center justify-center px-8 py-4 bg-gradient-to-r from-sage-600 to-sage-700 text-white rounded-xl hover:from-sage-700 hover:to-sage-800 transition-all duration-300 text-lg font-medium shadow-xl hover:shadow-2xl transform-gpu"
+                      whileHover={{ scale: 1.05, y: -3 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      <Mail className="w-5 h-5 mr-2" />
+                      Get in Touch
+                    </motion.a>
+                    <motion.a 
+                      href="/resume_Luis_Romero.pdf" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center justify-center px-8 py-4 border-2 border-sage-600 text-sage-600 rounded-xl bg-white/50 backdrop-blur-sm hover:bg-sage-600 hover:text-white transition-all duration-300 text-lg font-medium shadow-lg hover:shadow-xl transform-gpu"
+                      whileHover={{ scale: 1.05, y: -3 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      <Download className="w-5 h-5 mr-2" />
+                      Resume
+                    </motion.a>
+                  </div>
+                  
+                  {/* Authentic Timer link */}
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 0.8, delay: 2.3 }}
                   >
-                    <Mail className="w-5 h-5 mr-2" />
-                    Get in Touch
-                  </a>
-                  <a 
-                    href="/resume_Luis_Romero.pdf" 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center justify-center px-8 py-4 border-2 border-sage-600 text-sage-600 rounded-xl hover:bg-sage-600 hover:text-white transition-all duration-300 text-lg font-medium shadow-lg hover:shadow-xl hover:-translate-y-1"
-                  >
-                    <ExternalLink className="w-5 h-5 mr-2" />
-                    Resume
-                  </a>
-                </div>
+                    <motion.a 
+                      href="https://authentictimer.com" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center text-neutral-600 hover:text-neutral-900 transition-all duration-300 relative group"
+                      whileHover={{ y: -2 }}
+                    >
+                      <span className="text-lg">Check out my latest project - </span>
+                      <motion.div
+                        className="mx-2"
+                        animate={{ rotate: 360 }}
+                        transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+                      >
+                        <svg viewBox="0 0 100 100" className="w-5 h-5">
+                          <circle cx="50" cy="50" r="35" fill="none" stroke="currentColor" strokeWidth="6"></circle>
+                          <circle cx="50" cy="50" r="8" fill="#fbbf24"></circle>
+                          <path d="M 50 15 A 35 35 0 0 1 50 85" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round"></path>
+                        </svg>
+                      </motion.div>
+                      <span className="text-lg font-medium">Authentic Timer</span>
+                      <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-neutral-700 transition-all duration-300 group-hover:w-full"></span>
+                    </motion.a>
+                  </motion.div>
+                </motion.div>
               </motion.div>
 
               {/* Right: Professional Image */}
               <motion.div 
-                initial={{ opacity: 0, x: 30 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.8, delay: 0.4 }}
+                variants={slideInRight}
+                initial="initial"
+                animate="animate"
                 className="relative"
               >
-                <div className="relative aspect-[4/5] rounded-2xl overflow-hidden shadow-2xl">
+                <motion.div 
+                  className="relative aspect-[4/5] rounded-2xl overflow-hidden shadow-2xl ring-4 ring-white/50"
+                  whileHover={{ scale: 1.02, rotate: 1 }}
+                  transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                >
                   <img 
                     src="/images/me.jpg" 
                     alt="Luis Fernando Romero Calero"
                     className="w-full h-full object-cover object-center"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/5 to-transparent"></div>
-                </div>
+                  <div className="absolute inset-0 bg-gradient-to-t from-sage-900/10 via-transparent to-transparent"></div>
+                </motion.div>
+                
+                {/* Floating elements around image */}
+                <motion.div
+                  className="absolute -top-4 -right-4 w-8 h-8 bg-sage-500/20 rounded-full blur-sm"
+                  animate={{
+                    y: [0, -10, 0],
+                    opacity: [0.3, 0.7, 0.3],
+                  }}
+                  transition={{
+                    duration: 3,
+                    repeat: Infinity,
+                    ease: "easeInOut"
+                  }}
+                />
+                <motion.div
+                  className="absolute -bottom-6 -left-6 w-12 h-12 bg-sage-400/20 rounded-full blur-sm"
+                  animate={{
+                    y: [0, 10, 0],
+                    opacity: [0.2, 0.6, 0.2],
+                  }}
+                  transition={{
+                    duration: 4,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                    delay: 1
+                  }}
+                />
               </motion.div>
             </div>
           </div>
+
+          {/* Scroll indicator */}
+          <motion.div 
+            className="absolute bottom-8 left-1/2 transform -translate-x-1/2"
+            animate={{ y: [0, 10, 0] }}
+            transition={{ duration: 2, repeat: Infinity }}
+          >
+            <ChevronDown className="w-6 h-6 text-sage-600/60" />
+          </motion.div>
         </section>
 
         {/* Company Logos */}
-        <section className="py-16 px-6 bg-gradient-to-b from-sage-50/20 via-sage-50/30 to-sage-50/40">
-          <div className="max-w-6xl mx-auto">
-            <motion.div {...fadeIn} className="text-center mb-12 md:mb-16">
-              <h2 className="text-3xl md:text-4xl font-light mb-4">Some Companies I helped</h2>
-              <p className="text-neutral-600 text-lg">Trusted by organizations across diverse industries</p>
+        <section className="py-16 px-6 bg-gradient-to-b from-sage-100 via-sage-200 to-sage-100 relative overflow-hidden">
+          {/* Background decoration */}
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-sage-100/20 to-transparent"></div>
+          
+          <div className="max-w-6xl mx-auto relative z-10">
+            <motion.div 
+              initial={{ opacity: 0, y: 50 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8 }}
+              viewport={{ once: true }}
+              className="text-center mb-12 md:mb-16"
+            >
+              <h2 className="text-3xl md:text-4xl font-light mb-4">Some Companies I Helped</h2>
               
               {/* Mobile: Logos only, bigger */}
-              <div className="md:hidden grid grid-cols-3 gap-8 items-center justify-center mb-8">
+              <motion.div 
+                className="md:hidden grid grid-cols-3 gap-8 items-center justify-center mb-8"
+                variants={staggerContainer}
+                initial="initial"
+                whileInView="animate"
+                viewport={{ once: true }}
+              >
                 {companies.slice(0, 6).map((company, index) => (
-                  <div key={index} className="text-center opacity-100 hover:opacity-90 transition-opacity">
-                    <div className="h-16 flex items-center justify-center">
+                  <motion.div 
+                    key={index} 
+                    className="text-center opacity-100 hover:opacity-90 transition-opacity"
+                    variants={fadeInScale}
+                    whileHover={{ scale: 1.1, y: -5 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    <div className="h-16 flex items-center justify-center rounded-xl hover:shadow-lg transition-all duration-300">
                       <img 
                         src={company.logo} 
                         alt={company.name}
-                        className="h-12 w-auto max-w-20 object-contain hover:scale-110 transition-transform duration-300"
+                        className="h-12 w-auto max-w-20 object-contain filter hover:saturate-110 transition-all duration-300"
                       />
                     </div>
-                  </div>
+                  </motion.div>
                 ))}
-              </div>
+              </motion.div>
               
               {/* Desktop: Logos with text in two rows */}
-              <div className="hidden md:grid md:grid-cols-3 gap-8 lg:gap-12 items-center justify-center max-w-4xl mx-auto">
+              <motion.div 
+                className="hidden md:grid md:grid-cols-3 gap-8 lg:gap-12 items-center justify-center max-w-4xl mx-auto"
+                variants={staggerContainer}
+                initial="initial"
+                whileInView="animate"
+                viewport={{ once: true }}
+              >
                 {companies.map((company, index) => (
-                  <div key={index} className="text-center opacity-100 hover:opacity-90 transition-opacity p-6">
-                      <div className="h-24 flex items-center justify-center mb-4">
-                        <img 
-                          src={company.logo} 
-                          alt={company.name}
-                          className="h-16 w-auto max-w-32 object-contain hover:scale-110 transition-transform duration-300"
-                        />
-                      </div>
-                      <p className="text-sm text-neutral-600 text-center leading-tight font-medium">{company.role}</p>
+                  <motion.div 
+                    key={index} 
+                    className="text-center opacity-100 hover:opacity-90 transition-opacity p-6 rounded-xl hover:shadow-lg transition-all duration-300 group"
+                    variants={fadeInUp}
+                    whileHover={{ y: -8, scale: 1.02 }}
+                  >
+                    <div className="h-32 flex items-center justify-center mb-4">
+                      <img 
+                        src={company.logo} 
+                        alt={company.name}
+                        className="h-28 w-auto max-w-40 object-contain group-hover:scale-110 transition-transform duration-300 filter group-hover:saturate-110"
+                      />
                     </div>
+                    <p className="text-lg text-neutral-600 text-center leading-tight font-medium">{company.role}</p>
+                  </motion.div>
                 ))}
-              </div>
+              </motion.div>
             </motion.div>
           </div>
         </section>
 
         {/* Featured Project - Authentic Timer */}
-        <section id="projects" className="py-16 md:py-20 px-4 md:px-6 bg-gradient-to-b from-sage-50/40 via-sage-100/30 to-sage-50/50">
-          <div className="max-w-7xl mx-auto">
-            <motion.div {...fadeIn} className="text-center mb-12 md:mb-16">
+        <section id="projects" className="py-16 md:py-20 px-4 md:px-6 bg-gradient-to-b from-white via-sage-50 to-sage-100 relative overflow-hidden">
+          {/* Background decoration */}
+          <div className="absolute inset-0">
+            <div className="absolute top-1/3 left-0 w-72 h-72 bg-sage-200/10 rounded-full blur-3xl"></div>
+            <div className="absolute bottom-1/3 right-0 w-96 h-96 bg-sage-300/10 rounded-full blur-3xl"></div>
+          </div>
+          
+          <div className="max-w-7xl mx-auto relative z-10">
+            <motion.div 
+              initial={{ opacity: 0, y: 50 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8 }}
+              viewport={{ once: true }}
+              className="text-center mb-12 md:mb-16"
+            >
               <h2 className="text-3xl md:text-4xl font-light mb-4">Featured Work</h2>
               <p className="text-neutral-600 text-lg">Building tools that help people focus on what matters</p>
             </motion.div>
             
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-16 items-center">
-              <motion.div {...fadeIn}>
-                <div className="bg-white rounded-2xl overflow-hidden shadow-xl">
-                  <div className="aspect-square md:aspect-[4/5] lg:aspect-square">
-                    <img 
-                      src="/images/authentic-timer-screenshot.jpg" 
-                      alt="Authentic Timer - Focus timer app screenshot"
-                      className="w-full h-full object-contain bg-neutral-50"
-                    />
-                  </div>
-                  <div className="p-6 md:p-8 text-center">
-                    <h3 className="text-2xl md:text-3xl font-serif mb-3">Authentic Timer</h3>
-                    <p className="text-sage-700 text-lg">Focus timer for gentle productivity</p>
-                  </div>
-                </div>
+            {/* Authentic Timer Showcase */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-16 items-center mb-16">
+              
+              {/* Image Carousel */}
+              <motion.div 
+                initial={{ opacity: 0, x: -50 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.8, delay: 0.2 }}
+                viewport={{ once: true }}
+                className="order-last lg:order-first"
+              >
+                <AuthenticTimerCarousel />
               </motion.div>
               
-              <motion.div {...fadeIn} className="order-first lg:order-last">
+              {/* Story Content */}
+              <motion.div 
+                initial={{ opacity: 0, x: 50 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.8, delay: 0.4 }}
+                viewport={{ once: true }}
+              >
                 <div className="space-y-6 md:space-y-8">
-                  <div className="inline-flex items-center px-4 py-2 rounded-full bg-sage-100 text-sage-700 text-sm md:text-base font-medium">
-                    <Timer className="w-4 h-4 mr-2" />
+                  <motion.div 
+                    className="inline-flex items-center px-4 py-2 rounded-full bg-gradient-to-r from-sage-100 to-sage-200 text-sage-700 text-sm md:text-base font-medium shadow-sm"
+                    whileHover={{ scale: 1.05 }}
+                  >
+                    <motion.div
+                      className="mr-2"
+                      animate={{ rotate: 360 }}
+                      transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+                    >
+                      <svg viewBox="0 0 100 100" className="w-4 h-4">
+                        <circle cx="50" cy="50" r="35" fill="none" stroke="#1e3a8a" strokeWidth="3"></circle>
+                        <circle cx="50" cy="50" r="8" fill="#fbbf24"></circle>
+                        <path d="M 50 15 A 35 35 0 0 1 50 85" fill="none" stroke="#3b82f6" strokeWidth="2" strokeLinecap="round"></path>
+                      </svg>
+                    </motion.div>
                     Live Product
+                  </motion.div>
+                  
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-4">
+                      <motion.div
+                        animate={{ rotate: 360 }}
+                        transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
+                      >
+                        <svg viewBox="0 0 100 100" className="w-10 h-10 md:w-12 md:h-12">
+                          <circle cx="50" cy="50" r="35" fill="none" stroke="#1e3a8a" strokeWidth="3"></circle>
+                          <circle cx="50" cy="50" r="8" fill="#fbbf24"></circle>
+                          <path d="M 50 15 A 35 35 0 0 1 50 85" fill="none" stroke="#3b82f6" strokeWidth="2" strokeLinecap="round"></path>
+                        </svg>
+                      </motion.div>
+                      <h3 className="text-2xl md:text-3xl lg:text-4xl font-light">
+                        <span className="bg-gradient-to-r from-sage-700 to-sage-900 bg-clip-text text-transparent">
+                          Authentic Timer
+                        </span>
+                      </h3>
+                    </div>
+                    <p className="text-lg md:text-xl text-sage-600 font-medium">
+                      A clean timer with no fluff—born from personal necessity
+                    </p>
                   </div>
-                  <h3 className="text-2xl md:text-3xl lg:text-4xl font-light">Built with intention and purpose</h3>
-                  <p className="text-neutral-600 leading-relaxed text-lg md:text-xl">
-                    A focus timer app designed for gentle productivity. Created with mindful attention to user experience. 
-                    Now helping people worldwide focus without the pressure of traditional productivity tools.
-                  </p>
+                  
+                  <div className="space-y-4 text-neutral-600 leading-relaxed">
+                    <p>
+                      <span className="text-neutral-800 font-medium">November 2024:</span> While managing a sickness that limited my daily quality of life, I needed to manage my time carefully in the few hours I could focus. I searched for a clean, uncluttered timer that felt safe—but kept jumping between apps instead of having one productivity hub.
+                    </p>
+                    <p>
+                      That's when I conceived an <span className="italic text-sage-700">"authentic timer"</span>—helping me prepare focused sessions of 25, 30, 45, or 50 minutes to tackle books, emails, paperwork, with everything listed and timeboxed.
+                    </p>
+                    <p>
+                      <span className="text-neutral-800 font-medium">8 months later:</span> After collecting feedback and studying productivity, the nervous system, and ADHD, it became something I was proud to share with the world.
+                    </p>
+                  </div>
+                  
                   <div className="space-y-3">
-                    <div className="flex items-center text-sm text-neutral-500">
+                    <motion.div 
+                      className="flex items-center text-sm text-neutral-500 bg-white/40 backdrop-blur-sm px-3 py-2 rounded-lg"
+                      whileHover={{ x: 5 }}
+                    >
                       <span className="w-2 h-2 bg-sage-500 rounded-full mr-3"></span>
                       React, Next.js, Supabase, TypeScript
-                    </div>
-                    <div className="flex items-center text-sm text-neutral-500">
+                    </motion.div>
+                    <motion.div 
+                      className="flex items-center text-sm text-neutral-500 bg-white/40 backdrop-blur-sm px-3 py-2 rounded-lg"
+                      whileHover={{ x: 5 }}
+                    >
                       <span className="w-2 h-2 bg-sage-500 rounded-full mr-3"></span>
                       Hundreds of active users, zero marketing budget
-                    </div>
+                    </motion.div>
+                    <motion.div 
+                      className="flex items-center text-sm text-neutral-500 bg-white/40 backdrop-blur-sm px-3 py-2 rounded-lg"
+                      whileHover={{ x: 5 }}
+                    >
+                      <span className="w-2 h-2 bg-sage-500 rounded-full mr-3"></span>
+                      Inspired by Atomic Habits & Four Thousand Weeks
+                    </motion.div>
                   </div>
+                  
                   <div className="flex justify-center lg:justify-start pt-6">
-                    <a 
+                    <motion.a 
                       href="https://authentictimer.com" 
                       target="_blank" 
                       rel="noopener noreferrer"
-                      className="inline-flex items-center justify-center px-8 py-4 bg-sage-600 text-white rounded-lg hover:bg-sage-700 transition-colors text-lg font-medium shadow-lg hover:shadow-xl"
+                      className="inline-flex items-center justify-center px-8 py-4 bg-gradient-to-r from-sage-600 to-sage-700 text-white rounded-lg hover:from-sage-700 hover:to-sage-800 transition-all duration-300 text-lg font-medium shadow-lg hover:shadow-xl transform-gpu"
+                      whileHover={{ scale: 1.05, y: -2 }}
+                      whileTap={{ scale: 0.95 }}
                     >
                       <ExternalLink className="w-5 h-5 mr-2" />
                       Try Live App
-                    </a>
+                    </motion.a>
                   </div>
                 </div>
               </motion.div>
@@ -456,58 +1128,84 @@ export default function Home() {
 
             {/* Additional Projects */}
             <motion.div 
-              {...fadeIn}
+              initial={{ opacity: 0, y: 50 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.6 }}
+              viewport={{ once: true }}
               className="mt-12 md:mt-16"
             >
-              <div className="bg-white rounded-2xl p-6 md:p-8 border border-neutral-200 shadow-sm hover:shadow-lg transition-shadow">
+              <motion.div 
+                className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 md:p-8 border border-sage-200/50 shadow-sm hover:shadow-xl transition-all duration-500 ring-1 ring-sage-100/50"
+                whileHover={{ y: -5 }}
+              >
                 <div className="flex flex-col md:flex-row items-center gap-8">
-                  <div className="flex-shrink-0">
-                    <div className="w-40 h-40 md:w-48 md:h-48 bg-gradient-to-br from-sage-50 to-sage-100 rounded-2xl p-8 flex items-center justify-center shadow-lg">
-                      <img 
-                        src="/images/logo-rosemaryjs.png" 
-                        alt="Rosemary.js logo"
-                        className="w-full h-full object-contain hover:scale-105 transition-transform duration-300"
-                      />
-                    </div>
-                  </div>
+                  <motion.img 
+                    src="/images/logo-rosemaryjs.png" 
+                    alt="Rosemary.js logo"
+                    className="w-48 md:w-72 lg:w-72 object-contain rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 flex-shrink-0"
+                    animate={{
+                      scale: [1, 1.03, 1],
+                    }}
+                    transition={{
+                      duration: 3,
+                      repeat: Infinity,
+                      ease: "easeInOut"
+                    }}
+                  />
                   <div className="flex-1 text-center md:text-left">
-                    <h3 className="text-3xl font-semibold mb-4 text-neutral-900">Rosemary.js</h3>
+                    <h3 className="text-3xl font-semibold mb-4 text-neutral-900 bg-gradient-to-r from-sage-700 to-sage-900 bg-clip-text text-transparent">
+                      Rosemary.js
+                    </h3>
                     <p className="text-neutral-600 mb-6 text-lg leading-relaxed">
                       Open-source JavaScript library published on npm. Simplifying complex development workflows with elegant solutions.
                     </p>
                     <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
-                      <a 
+                      <motion.a 
                         href="https://www.npmjs.com/package/rosemary-js" 
                         target="_blank" 
                         rel="noopener noreferrer"
-                        className="inline-flex items-center justify-center px-6 py-3 bg-sage-600 text-white rounded-lg hover:bg-sage-700 transition-all duration-300 font-medium shadow-lg hover:shadow-xl hover:-translate-y-1"
+                        className="inline-flex items-center justify-center px-6 py-3 bg-gradient-to-r from-sage-600 to-sage-700 text-white rounded-lg hover:from-sage-700 hover:to-sage-800 transition-all duration-300 font-medium shadow-lg hover:shadow-xl transform-gpu"
+                        whileHover={{ scale: 1.05, y: -2 }}
+                        whileTap={{ scale: 0.95 }}
                       >
                         <ExternalLink className="w-5 h-5 mr-2" />
                         View on npm
-                      </a>
-                      <a 
+                      </motion.a>
+                      <motion.a 
                         href="https://github.com/luisfer/rosemary-js" 
                         target="_blank" 
                         rel="noopener noreferrer"
-                        className="inline-flex items-center justify-center px-6 py-3 border-2 border-sage-600 text-sage-600 rounded-lg hover:bg-sage-600 hover:text-white transition-all duration-300 font-medium shadow-lg hover:shadow-xl hover:-translate-y-1"
+                        className="inline-flex items-center justify-center px-6 py-3 border-2 border-sage-600 text-sage-600 rounded-lg bg-white/50 backdrop-blur-sm hover:bg-sage-600 hover:text-white transition-all duration-300 font-medium shadow-lg hover:shadow-xl transform-gpu"
+                        whileHover={{ scale: 1.05, y: -2 }}
+                        whileTap={{ scale: 0.95 }}
                       >
                         <Github className="w-5 h-5 mr-2" />
                         Source Code
-                      </a>
+                      </motion.a>
                     </div>
                   </div>
                 </div>
-              </div>
-
-
+              </motion.div>
             </motion.div>
           </div>
         </section>
 
         {/* Work Experience */}
-        <section id="experience" className="py-16 md:py-20 px-4 md:px-6 bg-gradient-to-b from-sage-50/50 via-white to-sage-50/30">
-          <div className="max-w-4xl mx-auto">
-            <motion.div {...fadeIn} className="text-center mb-12 md:mb-16">
+        <section id="experience" className="py-16 md:py-20 px-4 md:px-6 bg-gradient-to-b from-sage-100 via-white to-sage-200 relative overflow-hidden">
+          {/* Background decoration */}
+          <div className="absolute inset-0">
+            <div className="absolute top-0 left-1/4 w-96 h-96 bg-sage-200/5 rounded-full blur-3xl"></div>
+            <div className="absolute bottom-0 right-1/4 w-64 h-64 bg-sage-300/10 rounded-full blur-3xl"></div>
+          </div>
+          
+          <div className="max-w-4xl mx-auto relative z-10">
+            <motion.div 
+              initial={{ opacity: 0, y: 50 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8 }}
+              viewport={{ once: true }}
+              className="text-center mb-12 md:mb-16"
+            >
               <h2 className="text-3xl md:text-4xl font-light mb-4">Professional Experience</h2>
               <p className="text-neutral-600 text-lg">14+ years of technical leadership across major corporations</p>
             </motion.div>
@@ -516,22 +1214,26 @@ export default function Home() {
               {workExperience.map((job, index) => (
                 <motion.div 
                   key={index}
-                  initial={{ opacity: 0, y: 30 }}
+                  initial={{ opacity: 0, y: 50 }}
                   whileInView={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.6, delay: index * 0.1 }}
+                  transition={{ duration: 0.8, delay: index * 0.1 }}
                   viewport={{ once: true }}
-                  className="bg-white border border-neutral-200 rounded-2xl p-8 hover:shadow-lg transition-shadow"
+                  className="bg-white/80 backdrop-blur-sm border border-sage-200/50 rounded-2xl p-8 hover:shadow-xl transition-all duration-500 ring-1 ring-sage-100/50"
+                  whileHover={{ y: -5 }}
                 >
                   <div className="flex flex-col lg:flex-row gap-6 mb-6">
                     {/* Logo Column */}
                     <div className="flex-shrink-0 flex lg:flex-col items-center lg:items-start">
-                      <div className="w-20 h-20 lg:w-24 lg:h-24 bg-neutral-50 rounded-xl p-4 flex items-center justify-center shadow-sm">
+                      <motion.div 
+                        className="w-20 h-20 lg:w-24 lg:h-24 bg-gradient-to-br from-sage-50 to-sage-100 rounded-xl p-4 flex items-center justify-center shadow-sm hover:shadow-lg transition-all duration-300 ring-1 ring-sage-200/50"
+                        whileHover={{ scale: 1.1, rotate: 5 }}
+                      >
                         <img 
                           src={getCompanyLogo(job.company)} 
                           alt={`${job.company} logo`}
                           className="w-full h-full object-contain"
                         />
-                      </div>
+                      </motion.div>
                     </div>
                     
                     {/* Content Column */}
@@ -541,14 +1243,20 @@ export default function Home() {
                         <span className="font-medium text-lg">{job.company}</span>
                       </div>
                       <div className="flex flex-col sm:flex-row sm:items-center text-neutral-500 text-sm gap-2 sm:gap-4">
-                        <div className="flex items-center">
+                        <motion.div 
+                          className="flex items-center bg-white/60 px-3 py-1 rounded-full"
+                          whileHover={{ scale: 1.05 }}
+                        >
                           <Calendar className="w-4 h-4 mr-1" />
                           <span>{job.period}</span>
-                        </div>
-                        <div className="flex items-center">
+                        </motion.div>
+                        <motion.div 
+                          className="flex items-center bg-white/60 px-3 py-1 rounded-full"
+                          whileHover={{ scale: 1.05 }}
+                        >
                           <MapPin className="w-4 h-4 mr-1" />
                           <span>{job.location}</span>
-                        </div>
+                        </motion.div>
                       </div>
                     </div>
                   </div>
@@ -560,12 +1268,13 @@ export default function Home() {
                       <h4 className="font-medium text-neutral-900 mb-3">Technologies</h4>
                       <div className="flex flex-wrap gap-2">
                         {job.technologies.map((tech, techIndex) => (
-                          <span 
+                          <motion.span 
                             key={techIndex}
-                            className="px-3 py-1 bg-sage-100 text-sage-700 rounded-full text-sm font-medium"
+                            className="px-3 py-1 bg-gradient-to-r from-sage-100 to-sage-200 text-sage-700 rounded-full text-sm font-medium hover:from-sage-200 hover:to-sage-300 transition-all duration-300"
+                            whileHover={{ scale: 1.05 }}
                           >
                             {tech}
-                          </span>
+                          </motion.span>
                         ))}
                       </div>
                     </div>
@@ -574,10 +1283,14 @@ export default function Home() {
                       <h4 className="font-medium text-neutral-900 mb-3">Key Achievements</h4>
                       <ul className="space-y-2">
                         {job.achievements.map((achievement, achIndex) => (
-                          <li key={achIndex} className="flex items-start text-sm text-neutral-600">
+                          <motion.li 
+                            key={achIndex} 
+                            className="flex items-start text-sm text-neutral-600 bg-white/40 backdrop-blur-sm px-3 py-2 rounded-lg"
+                            whileHover={{ x: 5 }}
+                          >
                             <ArrowRight className="w-3 h-3 mr-2 mt-0.5 text-sage-600 flex-shrink-0" />
                             <span>{achievement}</span>
-                          </li>
+                          </motion.li>
                         ))}
                       </ul>
                     </div>
@@ -587,320 +1300,445 @@ export default function Home() {
             </div>
 
             <motion.div 
-              {...fadeIn}
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.5 }}
+              viewport={{ once: true }}
               className="text-center mt-12"
             >
-              <a 
+              <motion.a 
                 href="/resume_Luis_Romero.pdf" 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="inline-flex items-center px-6 py-3 border border-sage-600 text-sage-600 rounded-lg hover:bg-sage-50 transition-colors"
+                className="inline-flex items-center px-6 py-3 border-2 border-sage-600 text-sage-600 rounded-lg bg-white/50 backdrop-blur-sm hover:bg-sage-600 hover:text-white transition-all duration-300"
+                whileHover={{ scale: 1.05, y: -2 }}
+                whileTap={{ scale: 0.95 }}
               >
-                <ExternalLink className="w-4 h-4 mr-2" />
+                <Download className="w-4 h-4 mr-2" />
                 Download Full Resume
-              </a>
+              </motion.a>
             </motion.div>
           </div>
         </section>
 
-
-
         {/* Multi-faceted Talents */}
-        <section id="about" className="py-20 px-6 bg-gradient-to-b from-sage-50/30 via-sage-100/20 to-sage-50/40">
-          <div className="max-w-4xl mx-auto">
-            <motion.div {...fadeIn} className="text-center mb-16">
+        <section id="about" className="py-20 px-6 bg-gradient-to-b from-sage-200 via-sage-300/80 to-sage-200 relative overflow-hidden">
+          {/* Background decoration */}
+          <div className="absolute inset-0">
+            <motion.div
+              className="absolute top-1/4 right-1/4 w-72 h-72 bg-sage-200/10 rounded-full blur-3xl"
+              animate={{
+                scale: [1, 1.2, 1],
+                opacity: [0.3, 0.5, 0.3],
+              }}
+              transition={{
+                duration: 8,
+                repeat: Infinity,
+                ease: "easeInOut"
+              }}
+            />
+          </div>
+          
+          <div className="max-w-4xl mx-auto relative z-10">
+            <motion.div 
+              initial={{ opacity: 0, y: 50 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8 }}
+              viewport={{ once: true }}
+              className="text-center mb-16"
+            >
               <h2 className="text-3xl font-light mb-4">Beyond Code</h2>
             </motion.div>
 
             {/* Section Navigation */}
-            <div className="flex justify-center mb-12">
-              <div className="flex space-x-1 bg-white rounded-lg p-1 shadow-sm">
+            <motion.div 
+              className="flex justify-center mb-12"
+              initial={{ opacity: 0, scale: 0.9 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.8 }}
+              viewport={{ once: true }}
+            >
+              <div className="flex space-x-1 bg-white/70 backdrop-blur-md rounded-lg p-1 shadow-lg ring-1 ring-sage-200/50">
                 {sections.map((section) => (
-                  <button
+                  <motion.button
                     key={section.id}
                     onClick={() => setActiveSection(section.id)}
-                    className={`flex items-center px-3 sm:px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                    className={`flex items-center px-3 sm:px-4 py-2 rounded-md text-sm font-medium transition-all duration-300 ${
                       activeSection === section.id
-                        ? 'bg-sage-600 text-white'
-                        : 'text-neutral-600 hover:text-neutral-900'
+                        ? 'bg-gradient-to-r from-sage-600 to-sage-700 text-white shadow-md'
+                        : 'text-neutral-600 hover:text-neutral-900 hover:bg-white/50'
                     }`}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
                   >
-                    <section.icon className="w-4 h-4 mr-1 sm:mr-2" />
+                    <section.icon className="w-4 h-4 sm:mr-2" />
                     <span className="hidden sm:inline">{section.label}</span>
-                    <span className="sm:hidden text-xs">{section.label.slice(0, 3)}</span>
-                  </button>
+                  </motion.button>
                 ))}
               </div>
-            </div>
+            </motion.div>
 
             {/* Section Content */}
-            <motion.div
-              key={activeSection}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4 }}
-              className="bg-white rounded-2xl p-8 shadow-sm"
-            >
-              {activeSection === 'software' && (
-                <div className="space-y-6">
-                  <div className="flex items-center mb-6">
-                    <Code className="w-6 h-6 text-sage-600 mr-3" />
-                    <h3 className="text-2xl font-light">Software Engineering</h3>
-                  </div>
-                  <p className="text-neutral-600 leading-relaxed">
-                    With 14+ years of experience, I've worked across diverse industries from aviation to fintech. 
-                    My expertise spans technical leadership, solution architecture, and full-stack development. 
-                    I specialize in modernizing legacy systems and building scalable applications.
-                  </p>
-                  <div className="grid md:grid-cols-2 gap-6 mt-8">
-                    <div>
-                      <h4 className="font-medium mb-3">Core Technologies</h4>
-                      <div className="space-y-2">
-                        <span className="inline-block bg-sage-100 text-sage-700 px-3 py-1 rounded-full text-sm mr-2 mb-2">React / Next.js</span>
-                        <span className="inline-block bg-sage-100 text-sage-700 px-3 py-1 rounded-full text-sm mr-2 mb-2">Vue.js</span>
-                        <span className="inline-block bg-sage-100 text-sage-700 px-3 py-1 rounded-full text-sm mr-2 mb-2">TypeScript</span>
-                        <span className="inline-block bg-sage-100 text-sage-700 px-3 py-1 rounded-full text-sm mr-2 mb-2">Node.js</span>
-                        <span className="inline-block bg-sage-100 text-sage-700 px-3 py-1 rounded-full text-sm mr-2 mb-2">Python</span>
-                        <span className="inline-block bg-sage-100 text-sage-700 px-3 py-1 rounded-full text-sm mr-2 mb-2">AWS</span>
-                      </div>
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={activeSection}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.4 }}
+                className="bg-white/80 backdrop-blur-sm rounded-2xl p-8 shadow-lg ring-1 ring-sage-200/50"
+              >
+                {activeSection === 'software' && (
+                  <div className="space-y-6">
+                    <div className="flex items-center mb-6">
+                      <Code className="w-6 h-6 text-sage-600 mr-3" />
+                      <h3 className="text-2xl font-light">Software Engineering</h3>
                     </div>
-                    <div>
-                      <h4 className="font-medium mb-3">Industries</h4>
-                      <div className="space-y-2 text-sm text-neutral-600">
-                        <div className="flex items-center">
-                          <span className="w-2 h-2 bg-sage-500 rounded-full mr-3"></span>
-                          Aviation (British Airways)
-                        </div>
-                        <div className="flex items-center">
-                          <span className="w-2 h-2 bg-sage-500 rounded-full mr-3"></span>
-                          E-commerce (Booking.com)
-                        </div>
-                        <div className="flex items-center">
-                          <span className="w-2 h-2 bg-sage-500 rounded-full mr-3"></span>
-                          Supply Chain (Nike)
-                        </div>
-                        <div className="flex items-center">
-                          <span className="w-2 h-2 bg-sage-500 rounded-full mr-3"></span>
-                          Healthcare/Pharma (Roche, Burnet Institute, Doctorly)
-                        </div>
-                        <div className="flex items-center">
-                          <span className="w-2 h-2 bg-sage-500 rounded-full mr-3"></span>
-                          Fintech (ClearBank)
-                        </div>
-                        <div className="flex items-center">
-                          <span className="w-2 h-2 bg-sage-500 rounded-full mr-3"></span>
-                          SaaS (HeavenHR)
-                        </div>
-                        <div className="flex items-center">
-                          <span className="w-2 h-2 bg-sage-500 rounded-full mr-3"></span>
-                          Telecom (Verizon)
-                        </div>
-                        <div className="flex items-center">
-                          <span className="w-2 h-2 bg-sage-500 rounded-full mr-3"></span>
-                          Communications/Media (Prime Research, Cision, Nowtilus)
+                    <p className="text-neutral-600 leading-relaxed">
+                      With 14+ years of experience, I've worked across diverse industries from aviation to fintech. 
+                      My expertise spans technical leadership, solution architecture, and full-stack development. 
+                      I specialize in modernizing legacy systems and building scalable applications.
+                    </p>
+                    <div className="grid md:grid-cols-2 gap-6 mt-8">
+                      <div>
+                        <h4 className="font-medium mb-3">Core Technologies</h4>
+                        <div className="space-y-2">
+                          {['React / Next.js', 'Vue.js', 'TypeScript', 'Node.js', 'Python', 'AWS'].map((tech, index) => (
+                            <motion.span
+                              key={tech}
+                              className="inline-block bg-gradient-to-r from-sage-100 to-sage-200 text-sage-700 px-3 py-1 rounded-full text-sm mr-2 mb-2 hover:from-sage-200 hover:to-sage-300 transition-all duration-300"
+                              initial={{ opacity: 0, scale: 0.8 }}
+                              animate={{ opacity: 1, scale: 1 }}
+                              transition={{ delay: index * 0.1 }}
+                              whileHover={{ scale: 1.05 }}
+                            >
+                              {tech}
+                            </motion.span>
+                          ))}
                         </div>
                       </div>
+                      <div>
+                        <h4 className="font-medium mb-3">Industries</h4>
+                        <div className="space-y-2 text-sm text-neutral-600">
+                          {[
+                            'Aviation (British Airways)',
+                            'E-commerce (Booking.com)',
+                            'Supply Chain (Nike)',
+                            'Healthcare/Pharma (Roche, Burnet Institute, Doctorly)',
+                            'Fintech (ClearBank)',
+                            'SaaS (HeavenHR)',
+                            'Telecom (Verizon)',
+                            'Communications/Media (Prime Research, Cision, Nowtilus)'
+                          ].map((industry, index) => (
+                            <motion.div 
+                              key={industry}
+                              className="flex items-center bg-white/60 px-3 py-2 rounded-lg hover:bg-white/80 transition-all duration-300"
+                              initial={{ opacity: 0, x: -20 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              transition={{ delay: index * 0.05 }}
+                              whileHover={{ x: 5 }}
+                            >
+                              <span className="w-2 h-2 bg-sage-500 rounded-full mr-3"></span>
+                              {industry}
+                            </motion.div>
+                          ))}
+                        </div>
+                      </div>
                     </div>
                   </div>
-                </div>
-              )}
+                )}
 
-              {activeSection === 'music' && (
-                <div className="space-y-6">
-                  <div className="flex items-center mb-6">
-                    <Music className="w-6 h-6 text-sage-600 mr-3" />
-                    <h3 className="text-2xl font-light">Music</h3>
-                  </div>
-                  <p className="text-neutral-600 leading-relaxed">
-                    My solo project Lolo Tof explores themes of identity, transformation, and the human experience. 
-                    Music serves as a creative outlet that complements my technical work, offering a different form of expression.
-                  </p>
-                  
-                  {/* Album Covers */}
-                  <div className="grid grid-cols-2 gap-4 mt-8">
-                    <div className="bg-white rounded-lg p-4 border border-neutral-200">
-                      <img 
-                        src="/images/lolo-tof-album1.jpg" 
-                        alt="Lolo Tof Album Cover"
-                        className="w-full aspect-square object-cover rounded-lg mb-3"
-                      />
-                      <h4 className="font-medium text-sm">Latest Album</h4>
+                {activeSection === 'music' && (
+                  <div className="space-y-6">
+                    <div className="flex items-center mb-6">
+                      <Music className="w-6 h-6 text-sage-600 mr-3" />
+                      <h3 className="text-2xl font-light">Music</h3>
                     </div>
-                    <div className="bg-white rounded-lg p-4 border border-neutral-200">
-                      <img 
-                        src="/images/lolo-tof-album2.jpg" 
-                        alt="Lolo Tof EP Cover"
-                        className="w-full aspect-square object-cover rounded-lg mb-3"
-                      />
-                      <h4 className="font-medium text-sm">Latest EP</h4>
-                    </div>
-                  </div>
-                  
-                  <div className="grid md:grid-cols-2 gap-6 mt-8">
-                    <div>
-                      <h4 className="font-medium mb-3">Streaming Platforms</h4>
-                      <div className="space-y-3">
-                        <a href="https://open.spotify.com/artist/5a1Znw6zmERLIGWEa9C21z?si=Qxwd7f1KSgaQa3-M9uN6Ww" target="_blank" rel="noopener noreferrer" className="flex items-center text-neutral-600 hover:text-green-600 transition-colors">
-                          <SpotifyIcon />
-                          <span className="ml-2">Spotify</span>
-                        </a>
-                        <a href="https://music.apple.com/us/artist/lolo-tof/1460309352" target="_blank" rel="noopener noreferrer" className="flex items-center text-neutral-600 hover:text-red-500 transition-colors">
-                          <AppleMusicIcon />
-                          <span className="ml-2">Apple Music</span>
-                        </a>
-                        <a href="https://lolotof.bandcamp.com/" target="_blank" rel="noopener noreferrer" className="flex items-center text-neutral-600 hover:text-blue-600 transition-colors">
-                          <BandcampIcon />
-                          <span className="ml-2">Bandcamp</span>
-                        </a>
-                      </div>
-                    </div>
-                    <div className="bg-sage-50 rounded-lg p-4">
-                      <h4 className="font-medium mb-2">Lolo Tof</h4>
-                      <p className="text-sm text-neutral-600">Solo project exploring identity and transformation through music</p>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {activeSection === 'writer' && (
-                <div className="space-y-6">
-                  <div className="flex items-center mb-6">
-                    <BookOpen className="w-6 h-6 text-sage-600 mr-3" />
-                    <h3 className="text-2xl font-light">Writer</h3>
-                  </div>
-                  <p className="text-neutral-600 leading-relaxed">
-                    Published author of 'Integridad' (2012) and multiple award-winning short stories. 
-                    My writing has been featured in digital magazines and I've contributed to radio programs 
-                    discussing cinema and literature.
-                  </p>
-                  <div className="grid md:grid-cols-2 gap-6 mt-8">
-                    <div>
-                      <h4 className="font-medium mb-3">Published Works</h4>
-                      <div className="space-y-3">
-                        <a href="https://www.amazon.com/Integridad-Spanish-Luisfer-Romero-Calero-ebook/dp/B00DPW68A6" target="_blank" rel="noopener noreferrer" className="flex items-center text-neutral-600 hover:text-neutral-900 transition-colors">
-                          <ExternalLink className="w-4 h-4 mr-2" />
-                          'Integridad' on Amazon
-                        </a>
-                        <a href="https://drive.google.com/file/d/1sFEAeuqY1Jp8Ewtux_T7ZU3LsACJy2tx/view?usp=drive_link" target="_blank" rel="noopener noreferrer" className="flex items-center text-neutral-600 hover:text-neutral-900 transition-colors">
-                          <ExternalLink className="w-4 h-4 mr-2" />
-                          'Lisella' (2010)
-                        </a>
-                        <a href="https://drive.google.com/file/d/1uDmItqZJj6x-M59eLRx0M4ecoIGndeyT/view?usp=drive_link" target="_blank" rel="noopener noreferrer" className="flex items-center text-neutral-600 hover:text-neutral-900 transition-colors">
-                          <ExternalLink className="w-4 h-4 mr-2" />
-                          'Soul' (2009, award-winning)
-                        </a>
-                      </div>
-                    </div>
-                    <div>
-                      <h4 className="font-medium mb-3">Media Contributions</h4>
-                      <div className="space-y-2 text-sm text-neutral-600">
-                        <div className="flex items-center">
-                          <span className="w-2 h-2 bg-sage-500 rounded-full mr-3"></span>
-                          Radio Cope & Radio Lucena
-                        </div>
-                        <div className="flex items-center">
-                          <span className="w-2 h-2 bg-sage-500 rounded-full mr-3"></span>
-                          Digital magazines (cinema & books)
-                        </div>
-                        <div className="flex items-center">
-                          <span className="w-2 h-2 bg-sage-500 rounded-full mr-3"></span>
-                          Local & national writing awards
+                    <p className="text-neutral-600 leading-relaxed">
+                      My solo project Lolo Tof explores themes of identity, transformation, and the human experience. 
+                      Music serves as a creative outlet that complements my technical work, offering a different form of expression.
+                    </p>
+                    
+                    {/* Album Covers */}
+                    <motion.div 
+                      className="grid grid-cols-2 gap-4 mt-8"
+                      variants={staggerContainer}
+                      initial="initial"
+                      animate="animate"
+                    >
+                      {[
+                        { src: "/images/lolo-tof-album1.jpg", title: "Latest Album" },
+                        { src: "/images/lolo-tof-album2.jpg", title: "Latest EP" }
+                      ].map((album, index) => (
+                        <motion.div 
+                          key={index}
+                          className="bg-white rounded-lg p-4 border border-sage-200/50 shadow-sm hover:shadow-lg transition-all duration-300"
+                          variants={fadeInScale}
+                          whileHover={{ y: -5, scale: 1.02 }}
+                        >
+                          <div className="aspect-square rounded-lg overflow-hidden mb-3 bg-gradient-to-br from-sage-100 to-sage-200">
+                            <img 
+                              src={album.src} 
+                              alt="Lolo Tof Album Cover"
+                              className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                            />
+                          </div>
+                          <h4 className="font-medium text-sm text-center">{album.title}</h4>
+                        </motion.div>
+                      ))}
+                    </motion.div>
+                    
+                    <div className="grid md:grid-cols-2 gap-6 mt-8">
+                      <div>
+                        <h4 className="font-medium mb-3">Streaming Platforms</h4>
+                        <div className="space-y-3">
+                          {[
+                            { href: "https://open.spotify.com/artist/5a1Znw6zmERLIGWEa9C21z?si=Qxwd7f1KSgaQa3-M9uN6Ww", icon: SpotifyIcon, name: "Spotify", color: "hover:text-green-600" },
+                            { href: "https://music.apple.com/us/artist/lolo-tof/1460309352", icon: AppleMusicIcon, name: "Apple Music", color: "hover:text-red-500" },
+                            { href: "https://lolotof.bandcamp.com/", icon: BandcampIcon, name: "Bandcamp", color: "hover:text-blue-600" }
+                          ].map((platform, index) => (
+                            <motion.a 
+                              key={platform.name}
+                              href={platform.href} 
+                              target="_blank" 
+                              rel="noopener noreferrer" 
+                              className={`flex items-center text-neutral-600 ${platform.color} transition-all duration-300 bg-white/60 px-3 py-2 rounded-lg hover:bg-white/80`}
+                              initial={{ opacity: 0, x: -20 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              transition={{ delay: index * 0.1 }}
+                              whileHover={{ x: 5, scale: 1.02 }}
+                            >
+                              <platform.icon />
+                              <span className="ml-2">{platform.name}</span>
+                            </motion.a>
+                          ))}
                         </div>
                       </div>
+                      <motion.div 
+                        className="bg-gradient-to-br from-sage-50 to-sage-100 rounded-lg p-4 ring-1 ring-sage-200/50"
+                        whileHover={{ scale: 1.02 }}
+                      >
+                        <h4 className="font-medium mb-2">Lolo Tof</h4>
+                        <p className="text-sm text-neutral-600">Solo project exploring identity and transformation through music</p>
+                      </motion.div>
                     </div>
                   </div>
-                </div>
-              )}
+                )}
 
-
-            </motion.div>
+                {activeSection === 'writer' && (
+                  <div className="space-y-6">
+                    <div className="flex items-center mb-6">
+                      <BookOpen className="w-6 h-6 text-sage-600 mr-3" />
+                      <h3 className="text-2xl font-light">Writer</h3>
+                    </div>
+                    <p className="text-neutral-600 leading-relaxed">
+                      Published author of 'Integridad' (2012) and multiple award-winning short stories. 
+                      My writing has been featured in digital magazines and I've contributed to radio programs 
+                      discussing cinema and literature.
+                    </p>
+                    <div className="grid md:grid-cols-2 gap-6 mt-8">
+                      <div>
+                        <h4 className="font-medium mb-3">Published Works</h4>
+                        <div className="space-y-3">
+                          {[
+                            { href: "https://www.amazon.com/Integridad-Spanish-Luisfer-Romero-Calero-ebook/dp/B00DPW68A6", title: "'Integridad' on Amazon" },
+                            { href: "https://drive.google.com/file/d/1sFEAeuqY1Jp8Ewtux_T7ZU3LsACJy2tx/view?usp=drive_link", title: "'Lisella' (2010)" },
+                            { href: "https://drive.google.com/file/d/1uDmItqZJj6x-M59eLRx0M4ecoIGndeyT/view?usp=drive_link", title: "'Soul' (2009, award-winning)" }
+                          ].map((work, index) => (
+                            <motion.a 
+                              key={work.title}
+                              href={work.href} 
+                              target="_blank" 
+                              rel="noopener noreferrer" 
+                              className="flex items-center text-neutral-600 hover:text-neutral-900 transition-all duration-300 bg-white/60 px-3 py-2 rounded-lg hover:bg-white/80"
+                              initial={{ opacity: 0, x: -20 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              transition={{ delay: index * 0.1 }}
+                              whileHover={{ x: 5, scale: 1.02 }}
+                            >
+                              <ExternalLink className="w-4 h-4 mr-2" />
+                              {work.title}
+                            </motion.a>
+                          ))}
+                        </div>
+                      </div>
+                      <div>
+                        <h4 className="font-medium mb-3">Media Contributions</h4>
+                        <div className="space-y-2 text-sm text-neutral-600">
+                          {[
+                            'Radio Cope & Radio Lucena',
+                            'Digital magazines (cinema & books)',
+                            'Local & national writing awards'
+                          ].map((contribution, index) => (
+                            <motion.div 
+                              key={contribution}
+                              className="flex items-center bg-white/60 px-3 py-2 rounded-lg hover:bg-white/80 transition-all duration-300"
+                              initial={{ opacity: 0, x: -20 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              transition={{ delay: index * 0.1 }}
+                              whileHover={{ x: 5 }}
+                            >
+                              <span className="w-2 h-2 bg-sage-500 rounded-full mr-3"></span>
+                              {contribution}
+                            </motion.div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </motion.div>
+            </AnimatePresence>
           </div>
         </section>
 
         {/* Contact */}
-        <section id="contact" className="py-20 px-6 bg-gradient-to-b from-sage-50/40 via-sage-100/25 to-sage-50/60">
-          <div className="max-w-2xl mx-auto text-center">
-            <motion.div {...fadeIn}>
-              <h2 className="text-3xl font-light mb-6">Let's Connect</h2>
-              <p className="text-neutral-600 mb-8 leading-relaxed">
-                Currently available for freelance projects and interesting opportunities. 
-                Let's build something meaningful together.
-              </p>
-              <div className="flex flex-col sm:flex-row justify-center gap-4 sm:space-x-6">
-                <a 
-                  href="mailto:luisfer.romero.calero@gmail.com" 
-                  className="inline-flex items-center justify-center px-8 py-4 bg-sage-600 text-white rounded-xl hover:bg-sage-700 transition-all duration-300 font-medium shadow-lg hover:shadow-xl hover:-translate-y-1"
+        <section id="contact" className="py-20 px-6 bg-gradient-to-b from-sage-300 via-sage-400/60 to-sage-300 relative overflow-hidden">
+          {/* Background decoration */}
+          <div className="absolute inset-0">
+            <motion.div
+              className="absolute top-1/3 left-1/3 w-96 h-96 bg-sage-200/10 rounded-full blur-3xl"
+              animate={{
+                scale: [1, 1.3, 1],
+                opacity: [0.2, 0.4, 0.2],
+              }}
+              transition={{
+                duration: 6,
+                repeat: Infinity,
+                ease: "easeInOut"
+              }}
+            />
+          </div>
+          
+          <div className="max-w-4xl mx-auto relative z-10">
+            <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+              
+              {/* Left: Photo */}
+              <motion.div
+                initial={{ opacity: 0, x: -50 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.8 }}
+                viewport={{ once: true }}
+                className="flex justify-center lg:justify-end"
+              >
+                <motion.div 
+                  className="relative aspect-[4/5] w-80 rounded-2xl overflow-hidden shadow-2xl ring-4 ring-white/50"
+                  whileHover={{ scale: 1.02, rotate: 1 }}
+                  transition={{ type: "spring", stiffness: 300, damping: 20 }}
                 >
-                  <Mail className="w-5 h-5 mr-2" />
-                  Send Email
-                </a>
-                <a 
-                  href="https://linkedin.com/in/luisfer-romero-calero" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center justify-center px-8 py-4 border-2 border-sage-600 text-sage-600 rounded-xl hover:bg-sage-600 hover:text-white transition-all duration-300 font-medium shadow-lg hover:shadow-xl hover:-translate-y-1"
+                  <img 
+                    src="/images/me-2.jpg" 
+                    alt="Luis Fernando Romero Calero"
+                    className="w-full h-full object-cover object-top"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-sage-900/10 via-transparent to-transparent"></div>
+                </motion.div>
+              </motion.div>
+
+              {/* Right: Content */}
+              <motion.div
+                initial={{ opacity: 0, x: 50 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.8 }}
+                viewport={{ once: true }}
+                className="text-center lg:text-left"
+              >
+                <h2 className="text-3xl font-light mb-6">Let's Connect</h2>
+                <p className="text-neutral-600 mb-8 leading-relaxed">
+                  Currently available for freelance projects and interesting opportunities. 
+                  Let's build something meaningful together.
+                </p>
+                <motion.div 
+                  className="flex flex-col sm:flex-row lg:flex-col xl:flex-row justify-center lg:justify-start gap-4"
+                  variants={staggerContainer}
+                  initial="initial"
+                  whileInView="animate"
+                  viewport={{ once: true }}
                 >
-                  <Linkedin className="w-5 h-5 mr-2" />
-                  LinkedIn
-                </a>
-              </div>
-            </motion.div>
+                  <motion.a 
+                    variants={fadeInUp}
+                    href="mailto:luisfer.romero.calero@gmail.com" 
+                    className="inline-flex items-center justify-center px-8 py-4 bg-gradient-to-r from-sage-600 to-sage-700 text-white rounded-xl hover:from-sage-700 hover:to-sage-800 transition-all duration-300 font-medium shadow-lg hover:shadow-xl transform-gpu"
+                    whileHover={{ scale: 1.05, y: -3 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    <Mail className="w-5 h-5 mr-2" />
+                    Send Email
+                  </motion.a>
+                  <motion.a 
+                    variants={fadeInUp}
+                    href="https://linkedin.com/in/luisfer-romero-calero" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-center px-8 py-4 border-2 border-sage-600 text-sage-600 rounded-xl bg-white/50 backdrop-blur-sm hover:bg-sage-600 hover:text-white transition-all duration-300 font-medium shadow-lg hover:shadow-xl transform-gpu"
+                    whileHover={{ scale: 1.05, y: -3 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    <Linkedin className="w-5 h-5 mr-2" />
+                    LinkedIn
+                  </motion.a>
+                </motion.div>
+              </motion.div>
+            </div>
           </div>
         </section>
 
         {/* Footer */}
-        <footer className="py-16 px-6 border-t border-sage-100/50 bg-gradient-to-t from-sage-100/40 via-sage-50/60 to-sage-50/60">
-          <div className="max-w-4xl mx-auto">
+        <footer className="py-16 px-6 border-t border-sage-100/50 bg-gradient-to-t from-sage-400 via-sage-300 to-sage-400/80 relative overflow-hidden">
+          {/* Background decoration */}
+          <div className="absolute inset-0">
+            <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-96 h-96 bg-sage-200/5 rounded-full blur-3xl"></div>
+          </div>
+          
+          <div className="max-w-4xl mx-auto relative z-10">
             
             {/* Signature */}
-            <div className="flex justify-center mb-8">
-              <img 
-                src="/favicon.png" 
-                alt="Luis Fernando Romero Calero signature"
-                className="h-12 opacity-50 hover:opacity-80 transition-opacity duration-300"
-              />
-            </div>
+            <AnimatedSignature size="small" className="mb-8" />
             
             {/* Social Links */}
-            <div className="flex justify-center space-x-6 mb-8">
-              <a 
-                href="https://linkedin.com/in/luisfer-romero-calero" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="flex items-center justify-center w-12 h-12 bg-white rounded-full shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1"
-                aria-label="LinkedIn"
-              >
-                <Linkedin className="w-5 h-5 text-neutral-600 hover:text-sage-600" />
-              </a>
-              <a 
-                href="https://github.com/luisfer" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="flex items-center justify-center w-12 h-12 bg-white rounded-full shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1"
-                aria-label="GitHub"
-              >
-                <Github className="w-5 h-5 text-neutral-600 hover:text-sage-600" />
-              </a>
-              <a 
-                href="https://lolotof.bandcamp.com/" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="flex items-center justify-center w-12 h-12 bg-white rounded-full shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1"
-                aria-label="Music"
-              >
-                <Music className="w-5 h-5 text-neutral-600 hover:text-sage-600" />
-              </a>
-            </div>
+            <motion.div 
+              className="flex justify-center space-x-6 mb-8"
+              variants={staggerContainer}
+              initial="initial"
+              whileInView="animate"
+              viewport={{ once: true }}
+            >
+              {[
+                { href: "https://linkedin.com/in/luisfer-romero-calero", icon: Linkedin, label: "LinkedIn" },
+                { href: "https://github.com/luisfer", icon: Github, label: "GitHub" },
+                { href: "https://lolotof.bandcamp.com/", icon: Music, label: "Music" }
+              ].map((social, index) => (
+                <motion.a 
+                  key={social.label}
+                  href={social.href} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center w-12 h-12 bg-white/80 backdrop-blur-sm rounded-full shadow-sm hover:shadow-lg transition-all duration-300 transform-gpu group"
+                  aria-label={social.label}
+                  variants={fadeInScale}
+                  whileHover={{ scale: 1.1, y: -3 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <social.icon className="w-5 h-5 text-neutral-600 group-hover:text-sage-600 transition-colors duration-300" />
+                </motion.a>
+              ))}
+            </motion.div>
             
             {/* Footer Text */}
-            <div className="text-center space-y-2">
-              <p className="text-neutral-600 text-sm">
-                Building software that matters from Bangkok, Thailand
+            <motion.div 
+              className="text-center space-y-2"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.2 }}
+              viewport={{ once: true }}
+            >
+              <p className="text-neutral-800 text-sm">
+                Sawadii kráp! Hello from Bangkok, Thailand 🇹🇭
               </p>
-              <p className="text-neutral-400 text-xs">
+              <p className="text-neutral-700 text-xs">
                 © 2025 Luis Fernando Romero Calero
               </p>
-            </div>
+            </motion.div>
           </div>
         </footer>
       </div>
