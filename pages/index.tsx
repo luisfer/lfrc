@@ -602,7 +602,7 @@ export default function Home() {
                 >
                   <div>Senior Software Engineer</div>
                   <div>Creative Product Builder</div>
-                  <div>Aspiring Founder</div>
+                                        <div>Digital Transformation Specialist</div>
                   <div>Amateur Musician and Writer</div>
                 </motion.div>
               </motion.div>
@@ -789,7 +789,7 @@ export default function Home() {
                     <div className="text-lg text-neutral-700 leading-relaxed font-medium">
                       <div>Senior Software Engineer</div>
                       <div>Creative Product Builder</div>
-                      <div>Aspiring Founder</div>
+                      <div>Digital Transformation Specialist</div>
                       <div>Amateur Musician and Writer</div>
                     </div>
                   </div>
